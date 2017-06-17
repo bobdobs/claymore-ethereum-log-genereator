@@ -1,18 +1,23 @@
 #!/usr/bin/php
 <?php
 
-define('DEBUG_MODE', true);
+define('DEBUG_MODE', false);
 define('SERVICE_URL', 'http://192.168.1.186');
 define('SERVICE_PORT', 3333);
-define('RUN_INDEFINITELY', false); // If set to true script will continue to loop indefinitely
+define('RUN_INDEFINITELY', false); // If set to true script will loop indefinitely and continuously append to logs
 define('UPDATE_FREQ', 10); // Scan and generate log every 10s if RUN_INDEFINITELY=true
 define('MACHINE_NAME', 'minr');
 define('FILE_LOG_GPUS', 'gpu.log');
 define('FILE_LOG_TOTALS', 'totals.log');
-define('DUAL_CURRENCY', 'DCR');
+define('DUAL_CURRENCY', 'DCR'); // Just leave as-is if not dual mining
+define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); // Leave as-is
+
 
 while(true) {
 
+    $dual_mining_detected = false;
+
+    // Fetch data from Claymore API via cURL:
     $curl_url = SERVICE_URL.':'.SERVICE_PORT;
     $arr_curl_result = fetch_via_curl($curl_url);
 
@@ -20,19 +25,26 @@ while(true) {
 
     if ($arr_curl_result['quick_status'] == 'ok' && strlen($arr_curl_result['curl_exec']) > 0) {
 
+        // cURL-result ok. Strip HTML-tags:
         $clean = strip_tags($arr_curl_result['curl_exec']);
 
+        // Reverse array
         $arr_lines = array_reverse(explode("\n", $clean));
 
+        // Instantiate arrays that holds output data
         $arr_gpu_info = $arr_totals_info = array();
 
         $i = 0;
         foreach ($arr_lines as $key => $line) {
 
-
             if (substr($line, 0, 4) == 'GPU ') {
+                // If we encounter 'GPU ' we are done and can stop
                 break;
             }
+
+            # ------------------------------------------------------------------ #
+            # Individual GPU's: id, temperatures, and fan speed
+            # ------------------------------------------------------------------ #
 
             // Get temp. and fans of individual cards - GPU0 t=57C fan=23%, GPU1 t=67C fan=40%, GPU2 t=64C fan=70%, GPU3 t=73C fan=70%
             if (substr($line, 0, 4) == 'GPU0') {
@@ -53,7 +65,89 @@ while(true) {
 
             }
 
-            // Get mining speed of individual cards - ETH: GPU0 28.780 Mh/s, GPU1 29.179 Mh/s, GPU2 24.029 Mh/s, GPU3 28.896 Mh/s
+            # ------------------------------------------------------------------ #
+            # DUAL CURRENCY: Get mining speed of individual cards
+            # ------------------------------------------------------------------ #
+
+            // &nbsp; DCR: GPU0 336.523 Mh/s, GPU1 352.541 Mh/s, GPU2 off, GPU3 off
+            if (stristr($line, DUAL_CURRENCY.': GPU') !== false) {
+
+                // It seems we are dual mining
+                $dual_mining_detected = true;
+
+                $clean_line = substr($line, 12);
+                $arr_gpu_speed = explode(', ', $clean_line);
+
+                $gpu_number = 0;
+                foreach ($arr_gpu_speed as $k_gpu => $gpu_info) {
+                    $arr_gpu = explode(' ', $gpu_info);
+
+                    if ($arr_gpu[1] == 'off') {
+                        $arr_gpu[1] = 0;
+                    }
+
+                    $arr_gpu_info[$gpu_number][DUAL_CURRENCY_LOWER.'_speed'] = $arr_gpu[1];
+
+                    $gpu_number++;
+                }
+
+            }
+
+            # ------------------------------------------------------------------ #
+            # DUAL CURRENCY: Get totals
+            # ------------------------------------------------------------------ #
+
+            // &nbsp; DCR - Total Speed: 685.462 Mh/s, Total Shares: 4831, Rejected: 69
+            if (stristr($line, DUAL_CURRENCY.' - Total Speed:') !== false) {
+
+                // It seems we are dual mining
+                $dual_mining_detected = true;
+
+                $clean_line = substr($line, 12);
+
+                $arr_totals = explode(' ', $clean_line);
+                $shares = str_replace(array('),', '('), array('', '+'), $arr_totals[7]);
+                $arr_shares = explode('+', $shares);
+
+                $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_speed'] = $arr_totals[3];
+                $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares'] = $arr_shares[0];
+                $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_rejected'] = intval($arr_totals[9]);
+
+                // Shares for individual cards
+                $arr_card_shares = array_slice($arr_shares, 1, count($arr_shares));
+
+                if (!empty($arr_card_shares)) {
+                    foreach ($arr_card_shares as $k_gpu => $gpu_shares) {
+                        $arr_gpu_info[$k_gpu][DUAL_CURRENCY_LOWER.'_shares'] = $gpu_shares;
+                    }
+                }
+
+                // Let's calculate some averages for the totals array and set share percentage per card
+                if (!empty($arr_gpu_info)) {
+                    $total_cards = count($arr_gpu_info);
+
+                    $arr_totals_info[DUAL_CURRENCY_LOWER.'_avg_speed_per_card']  = round($arr_totals_info[DUAL_CURRENCY_LOWER.'_total_speed'] / $total_cards, 2);
+                    $arr_totals_info[DUAL_CURRENCY_LOWER.'_avg_shares_per_card'] = round($arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares'] / $total_cards, 2);
+
+                    $temp_total = $fan_total = 0;
+                    foreach ($arr_gpu_info as $k_gpu => $gpu) {
+                        if ($arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares'] > 0) {
+                            $arr_gpu_info[$k_gpu][DUAL_CURRENCY_LOWER.'_shares_pct'] = round(100 * ($gpu[DUAL_CURRENCY_LOWER.'_shares'] / $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares']), 2);
+                        } else {
+                            $arr_gpu_info[$k_gpu][DUAL_CURRENCY_LOWER.'_shares_pct'] = 0;
+                        }
+                    }
+
+                }
+
+            }
+
+
+            # ------------------------------------------------------------------ #
+            # ETH: Get mining speed of individual cards
+            # ------------------------------------------------------------------ #
+
+            // ETH: GPU0 28.780 Mh/s, GPU1 29.179 Mh/s, GPU2 24.029 Mh/s, GPU3 28.896 Mh/s
             if (substr($line, 0, 8) == 'ETH: GPU') {
 
                 $clean_line = substr($line, 5);
@@ -61,7 +155,6 @@ while(true) {
                 $arr_gpu_speed = explode(', ', $clean_line);
 
                 $gpu_number = 0;
-                $total_shares = 0;
                 foreach ($arr_gpu_speed as $k_gpu => $gpu_info) {
                     $arr_gpu = explode(' ', $gpu_info);
 
@@ -76,7 +169,11 @@ while(true) {
 
             }
 
-            // Get totals - ETH - Total Speed: 110.884 Mh/s, Total Shares: 271(78+84+57+57), Rejected: 0, Time: 02:47
+            # ------------------------------------------------------------------ #
+            # ETH: Get totals and also calculate avg. temperature and avg. fan
+            # ------------------------------------------------------------------ #
+
+            // ETH - Total Speed: 110.884 Mh/s, Total Shares: 271(78+84+57+57), Rejected: 0, Time: 02:47
             if (substr($line, 0, strlen('ETH - Total Speed')) == 'ETH - Total Speed') {
 
                 $clean_line = substr($line, 5);
@@ -85,12 +182,9 @@ while(true) {
                 $shares = str_replace(array('),', '('), array('', '+'), $arr_totals[7]);
                 $arr_shares = explode('+', $shares);
 
-                $arr_totals_info = array(
-                    'eth_total_speed' => $arr_totals[3],
-                    'eth_total_shares' => $arr_shares[0],
-                    'eth_total_rejected' => intval($arr_totals[9]),
-                );
-
+                $arr_totals_info['eth_total_speed'] = $arr_totals[3];
+                $arr_totals_info['eth_total_shares'] = $arr_shares[0];
+                $arr_totals_info['eth_total_rejected'] = intval($arr_totals[9]);
 
                 // Shares for individual cards
                 $arr_card_shares = array_slice($arr_shares, 1, count($arr_shares));
@@ -101,7 +195,7 @@ while(true) {
                     }
                 }
 
-                // Let's calculate some averages for the totals array
+                // Let's calculate some averages for the totals array and set share percentage per card
                 if (!empty($arr_gpu_info)) {
                     $total_cards = count($arr_gpu_info);
 
@@ -112,7 +206,11 @@ while(true) {
                     foreach ($arr_gpu_info as $k_gpu => $gpu) {
                         $temp_total += $gpu['temp'];
                         $fan_total  += $gpu['fan'];
-                        $arr_gpu_info[$k_gpu]['eth_shares_pct'] = round(100 * ($gpu['eth_shares'] / $arr_totals_info['eth_total_shares']), 2);
+                        if ($arr_totals_info['eth_total_shares'] > 0) {
+                            $arr_gpu_info[$k_gpu]['eth_shares_pct'] = round(100 * ($gpu['eth_shares'] / $arr_totals_info['eth_total_shares']), 2);
+                        } else {
+                            $arr_gpu_info[$k_gpu]['eth_shares_pct'] = 0;
+                        }
                     }
 
                     $arr_totals_info['avg_temp'] = round($temp_total / $total_cards, 2);
@@ -126,8 +224,48 @@ while(true) {
 
         }
 
+        # ------------------------------------------------------------------ #
+        # Sorting totals array before output
+        # ------------------------------------------------------------------ #
+
+        // Sort order
+        $arr_totals_order = array('avg_temp', 'avg_fan', 'eth_total_speed', 'eth_total_shares', 'eth_total_rejected', 'eth_avg_speed_per_card', 'eth_avg_shares_per_card');
+        if ($dual_mining_detected === true) {
+            // We are doing dual mining, so there are a few more keys we need to sort
+            $arr_totals_order = array_merge($arr_totals_order, array(DUAL_CURRENCY_LOWER.'_total_speed', DUAL_CURRENCY_LOWER.'_total_shares', DUAL_CURRENCY_LOWER.'_total_rejected', DUAL_CURRENCY_LOWER.'_avg_speed_per_card', DUAL_CURRENCY_LOWER.'_avg_shares_per_card'));
+        }
+        // Now sort the totals array:
+        $arr_totals_info = array_merge(array_flip($arr_totals_order), $arr_totals_info);
+
+
+        # ------------------------------------------------------------------ #
+        # Sorting GPU arrays before output
+        # ------------------------------------------------------------------ #
+
+        // Sort order
+        $arr_gpu_order = array('id', 'temp', 'fan', 'eth_speed', 'eth_shares', 'eth_shares_pct');
+        if ($dual_mining_detected === true) {
+            // We are doing dual mining, so there are a few more keys we need to sort
+            $arr_gpu_order = array_merge($arr_gpu_order, array(DUAL_CURRENCY_LOWER.'_speed', DUAL_CURRENCY_LOWER.'_shares', DUAL_CURRENCY_LOWER.'_shares_pct'));
+        }
+
+        foreach ($arr_gpu_info as $gpu_k => $gpu) {
+            // Sort each GPU array
+            $arr_gpu_info[$gpu_k] = array_merge(array_flip($arr_gpu_order), $gpu);
+        }
+
+
+        # ------------------------------------------------------------------ #
+        # Log time and machine name
+        # ------------------------------------------------------------------ #
+
         $objDateTime = new DateTime('NOW');
         $time = str_replace('+', 'Z', $objDateTime->format(DateTime::RFC3339));
+
+
+        # ------------------------------------------------------------------ #
+        # Write to totals log file
+        # ------------------------------------------------------------------ #
 
         $log_entry_total = $time.', machine: '.MACHINE_NAME;
 
@@ -136,6 +274,11 @@ while(true) {
         }
 
         file_put_contents(FILE_LOG_TOTALS, $log_entry_total."\n", FILE_APPEND);
+
+
+        # ------------------------------------------------------------------ #
+        # Write to gpu log file
+        # ------------------------------------------------------------------ #
 
         $log_entry_gpu = '';
         foreach ($arr_gpu_info as $gpu_k => $gpu) {
@@ -151,6 +294,11 @@ while(true) {
 
         file_put_contents(FILE_LOG_GPUS, $log_entry_gpu, FILE_APPEND);
 
+
+        # ------------------------------------------------------------------ #
+        # Output debug-info. if enabled
+        # ------------------------------------------------------------------ #
+
         if (DEBUG_MODE === true) {
             print "===========================================================================\n\n";
             print $log_entry_total . "\n";
@@ -165,6 +313,7 @@ while(true) {
 
     } else if (DEBUG_MODE === true) {
 
+        // Error
         print 'Could not reach Claymore API on '.SERVICE_URL.' port '.SERVICE_PORT;
 
     }
@@ -176,8 +325,6 @@ while(true) {
     sleep(UPDATE_FREQ);
 
 }
-
-
 
 
 
@@ -218,12 +365,10 @@ function fetch_via_curl($url) {
     $arr_curl_result['quick_status'] = $quick_status;
     $arr_curl_result['http_code']    = $http_code;
 
-
     curl_close($ch);
 
     return $arr_curl_result;
 
 }
-
 
 ?>
