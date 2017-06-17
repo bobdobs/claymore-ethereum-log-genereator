@@ -2,30 +2,28 @@
 Generate log files from Claymores Dual Ethereum Miner and output the data in a new format 
  that is easy to work with. The script has been tested on Claymore v9.4 and v9.5.
 
-Please note that this is a work-in-progress!
 
 ## Motivation
-I was not happy about the log format that Claymore Eth miner provides, so I decided 
+My goal is to get a better visual representation of the data from the Claymore miner. I will achieve this by creating a cool looking Grafana or Kibana dashboard. Look here for inspiration: 
+
+https://grafana.com/  
+https://www.elastic.co/products/kibana
+
+I really needed a better visual representation of the data to optimize my rig that is sitting inside a 4U server. Temperature is a real challenge and a better visual representation of fan speed, temperature etc. really helps. 
+
+I was not totally happy about the log format that the Claymore miner provides, so I decided 
 to write my own log generator. It outputs much of the same information, but in a different 
 format that is easier to work with in the ELK stack (Elasticsearch, Logstash, Kibana) or 
-the TICK stack (Telegraf, InfluxDB, Chronograf, and Kapacitor + Grafana).
+the TICK stack (Telegraf, InfluxDB, Chronograf, and Kapacitor + Grafana). 
 
 
 ## How it works
 The scripts queries the Claymore miner API with cURL and parses the result using PHP. 
 It then outputs to two separate log files: 
-- A log-file with totals (like total mining speed and total shares).
+- A log-file with totals (like total mining speed, total shares, avg. temperature etc.).
 - A log-file with metrics about individual GPU's in the rig. 
 
-The log files currently look like this: 
- 
-**Totals log** 
-
-`2017-06-17T12:20:40Z02:00, machine: minr, eth_total_speed: 85.995, eth_total_shares: 1146, eth_total_rejected: 0, eth_avg_speed_per_card: 21.5, eth_avg_shares_per_card: 286.5, avg_temp: 63.25, avg_fan: 56.5`
-
-**Individual GPU's log**
-
-`2017-06-17T14:59:34Z02:00, machine: minr, id: GPU0, temp: 72, fan: 48, eth_speed: 27.229, eth_shares: 359`
+Take a look at the sample log files in the log_examples folder to see what the log files look like.  
 
 
 ## Configuring
@@ -47,12 +45,16 @@ Please use the constants at the top of eth_log_gen.php to configure various opti
  \# The file name for the log with metrics about individual GPU's
  - define('FILE_LOG_TOTALS', 'totals.log');
  \# The file name for the logs containing totals 
+ - define('DUAL_CURRENCY', 'DCR'); 
+ \# Just leave as-is if NOT dual mining. Enter symbol for other cryptocurrency if dual mining (for example "DCR" for Decred)
+ define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); 
+ \# Leave as-is
+
+You will want to set RUN_INDEFINITELY=true in order to continuously update the log-files. Also you will most likely run this script from command line or as a daemon.   
  
 
 ## Upcoming changes
-It currently works fine if running in dual mining mode, but does not provide data about the other currency mined. In the future it will. 
- 
-The script should run via daemon service in Linux, and future version will provide an example script for this.
+The script should run as daemon in Linux, and future version will provide an example script for this.
   
 ## Donate
 You are free to use the script in any way you desire. If you found it useful consider making 
