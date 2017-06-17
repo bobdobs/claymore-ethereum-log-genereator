@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-define('DEBUG_MODE', false);
+define('DEBUG_MODE', true);
 define('SERVICE_URL', 'http://192.168.1.186');
 define('SERVICE_PORT', 3333);
 define('RUN_INDEFINITELY', false); // If set to true script will continue to loop indefinitely
@@ -112,6 +112,7 @@ while(true) {
                     foreach ($arr_gpu_info as $k_gpu => $gpu) {
                         $temp_total += $gpu['temp'];
                         $fan_total  += $gpu['fan'];
+                        $arr_gpu_info[$k_gpu]['eth_shares_pct'] = round(100 * ($gpu['eth_shares'] / $arr_totals_info['eth_total_shares']), 2);
                     }
 
                     $arr_totals_info['avg_temp'] = round($temp_total / $total_cards, 2);
