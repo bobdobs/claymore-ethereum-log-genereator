@@ -6,7 +6,7 @@ Please note that this is a work-in-progress!
 
 ## Motivation
 I was not happy about the log format that Claymore Eth miner provides, so I decided 
-to write my own log generator. It outputs much of the same information, but in a different  
+to write my own log generator. It outputs much of the same information, but in a different 
 format that is easier to work with in the ELK stack (Elasticsearch, Logstash, Kibana) or 
 the TICK stack (Telegraf, InfluxDB, Chronograf, and Kapacitor + Grafana).
 
@@ -21,27 +21,11 @@ The log files currently look like this:
  
 **Totals log** 
 
-`
-2017-06-17T12:20:40Z02:00, machine: minr, eth_total_speed: 85.995, eth_total_shares: 1146, eth_total_rejected: 0, eth_avg_speed_per_card: 21.5, eth_avg_shares_per_card: 286.5, avg_temp: 63.25, avg_fan: 56.5    
-2017-06-17T12:22:32Z02:00, machine: minr, eth_total_speed: 86.084, eth_total_shares: 1150, eth_total_rejected: 0, eth_avg_speed_per_card: 21.52, eth_avg_shares_per_card: 287.5, avg_temp: 63.25, avg_fan: 56.75  
-2017-06-17T14:59:34Z02:00, machine: minr, eth_total_speed: 85.569, eth_total_shares: 1324, eth_total_rejected: 0, eth_avg_speed_per_card: 21.39, eth_avg_shares_per_card: 331, avg_temp: 62.75, avg_fan: 56.5   
-2017-06-17T15:22:13Z02:00, machine: minr, eth_total_speed: 109.989, eth_total_shares: 1356, eth_total_rejected: 0, eth_avg_speed_per_card: 27.5, eth_avg_shares_per_card: 339, avg_temp: 71.5, avg_fan: 56.5  
-
-`
+`2017-06-17T12:20:40Z02:00, machine: minr, eth_total_speed: 85.995, eth_total_shares: 1146, eth_total_rejected: 0, eth_avg_speed_per_card: 21.5, eth_avg_shares_per_card: 286.5, avg_temp: 63.25, avg_fan: 56.5`
 
 **Individual GPU's log**
 
-`
-2017-06-17T14:59:34Z02:00, machine: minr, id: GPU0, temp: 72, fan: 48, eth_speed: 27.229, eth_shares: 359  
-2017-06-17T14:59:34Z02:00, machine: minr, id: GPU1, temp: 72, fan: 40, eth_speed: 29.437, eth_shares: 379  
-2017-06-17T14:59:34Z02:00, machine: minr, id: GPU2, temp: 37, fan: 69, eth_speed: 0, eth_shares: 237  
-2017-06-17T14:59:34Z02:00, machine: minr, id: GPU3, temp: 70, fan: 69, eth_speed: 28.903, eth_shares: 376  
-2017-06-17T15:22:13Z02:00, machine: minr, id: GPU0, temp: 71, fan: 48, eth_speed: 27.770, eth_shares: 374  
-2017-06-17T15:22:13Z02:00, machine: minr, id: GPU1, temp: 71, fan: 40, eth_speed: 29.311, eth_shares: 385  
-2017-06-17T15:22:13Z02:00, machine: minr, id: GPU2, temp: 68, fan: 69, eth_speed: 23.988, eth_shares: 238  
-2017-06-17T15:22:13Z02:00, machine: minr, id: GPU3, temp: 76, fan: 69, eth_speed: 28.920, eth_shares: 389  
-
-`
+`2017-06-17T14:59:34Z02:00, machine: minr, id: GPU0, temp: 72, fan: 48, eth_speed: 27.229, eth_shares: 359`
 
 
 ## Configuring
@@ -66,16 +50,14 @@ Please use the constants at the top of eth_log_gen.php to configure various opti
  
 
 ## Upcoming changes
-It currently works fine if running in dual mining mode, but does not provide data  
-about the other currency mined. In the future it will. 
+It currently works fine if running in dual mining mode, but does not provide data about the other currency mined. In the future it will. 
  
-The script should run via daemon service in Linux, and future version will provide an 
- example script for this.
+The script should run via daemon service in Linux, and future version will provide an example script for this.
   
 ## Donate
 You are free to use the script in any way you desire. If you found it useful consider making 
 a donation: 
 
-ETH: 0xa88F6aE3370205d453dEEfef06AafefEe4942710
-BTC: 1Dpb53d2xTHr5AC55MUQU6yBWNcRt8k3zG
-Zcash: t1PLbzngKSNYZWo47va15tsmygjLfKx8cro
+ETH: 0xa88F6aE3370205d453dEEfef06AafefEe4942710  
+BTC: 1Dpb53d2xTHr5AC55MUQU6yBWNcRt8k3zG  
+Zcash: t1PLbzngKSNYZWo47va15tsmygjLfKx8cro  
