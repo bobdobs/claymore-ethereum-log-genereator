@@ -1,4 +1,5 @@
 .idea
 logs
 utils
-*.log
+/gpu.log
+/totals.log
