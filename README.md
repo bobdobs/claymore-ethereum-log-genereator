@@ -26,7 +26,20 @@ It then outputs to two separate log files:
 Take a look at the sample log files in the log_examples folder to see what the log files look like.  
 
 
-## Configuring
+## Setup and requirements 
+Simply download or clone repository. The only requirement is PHP with cURL. The script is testet and works fine on both Linux and Windows.  
+
+### Linux
+Make the php file executable:  
+`$ chmod +x eth_log_gen.php`
+
+You may need to install cURL for PHP. You can check with PHP info.:   
+`php -i | grep curl`
+
+To install cURL for PHP:  
+`$ sudo apt-get install php-curl`
+
+### Configuring
 Please use the constants at the top of eth_log_gen.php to configure various options. 
  
  - define('DEBUG_MODE', false);
@@ -47,7 +60,7 @@ Please use the constants at the top of eth_log_gen.php to configure various opti
  \# The file name for the logs containing totals 
  - define('DUAL_CURRENCY', 'DCR'); 
  \# Just leave as-is if NOT dual mining. Enter symbol for other cryptocurrency if dual mining (for example "DCR" for Decred)
- define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); 
+ - define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); 
  \# Leave as-is
 
 You will want to set RUN_INDEFINITELY=true in order to continuously update the log-files. Also you will most likely run this script from command line or as a daemon.   
