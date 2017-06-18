@@ -7,8 +7,8 @@ define('SERVICE_PORT', 3333);
 define('RUN_INDEFINITELY', false); // If set to true script will loop indefinitely and continuously append to logs
 define('UPDATE_FREQ', 10); // Scan and generate log every 10s if RUN_INDEFINITELY=true
 define('MACHINE_NAME', 'minr');
-define('FILE_LOG_GPUS', 'gpu.log');
-define('FILE_LOG_TOTALS', 'totals.log');
+define('FILE_LOG_GPUS', '/home/scripts/claymore-ethereum-log-genereator/gpu.log');
+define('FILE_LOG_TOTALS', '/home/scripts/claymore-ethereum-log-genereator/totals.log');
 define('DUAL_CURRENCY', 'DCR'); // Just leave as-is if not dual mining
 define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); // Leave as-is
 

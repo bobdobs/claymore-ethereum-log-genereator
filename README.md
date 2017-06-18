@@ -27,7 +27,7 @@ Take a look at the sample log files in the log_examples folder to see what the l
 
 
 ## Setup and requirements 
-Simply download or clone repository. The only requirement is PHP with cURL. The script is testet and works fine on both Linux and Windows.  
+Simply download or clone repository. The only requirement is PHP with cURL. The script is tested and works fine on both Linux and Windows.  
 
 ### Linux
 Make the php file executable:  
