@@ -2,7 +2,7 @@
 <?php
 
 define('DEBUG_MODE', false);
-define('SERVICE_URL', 'http://192.168.1.186');
+define('SERVICE_URL', 'http://192.168.1.127');
 define('SERVICE_PORT', 3333);
 define('RUN_INDEFINITELY', false); // If set to true script will loop indefinitely and continuously append to logs
 define('UPDATE_FREQ', 10); // Scan and generate log every 10s if RUN_INDEFINITELY=true
@@ -11,6 +11,12 @@ define('FILE_LOG_GPUS', '/home/scripts/claymore-ethereum-log-genereator/gpu.log'
 define('FILE_LOG_TOTALS', '/home/scripts/claymore-ethereum-log-genereator/totals.log');
 define('DUAL_CURRENCY', 'DCR'); // Just leave as-is if not dual mining
 define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); // Leave as-is
+define('INFLUXDB_ENABLED', true);
+define('INFLUXDB_DB', 'telegraf');
+define('INFLUXDB_SERVICE_URL', 'http://localhost');
+define('INFLUXDB_SERVICE_PORT', 8086);
+
+date_default_timezone_set('UTC');
 
 while(true) {
 
@@ -184,7 +190,7 @@ while(true) {
                 $arr_shares = explode('+', $shares);
 
                 $arr_totals_info['eth_total_speed'] = $arr_totals[3];
-                $arr_totals_info['eth_total_shares'] = $arr_shares[0];
+                $arr_totals_info['eth_total_shares'] = intval(str_replace(",", "", $arr_shares[0]));
                 $arr_totals_info['eth_total_rejected'] = intval($arr_totals[9]);
 
                 // Shares for individual cards
@@ -205,13 +211,20 @@ while(true) {
 
                     $temp_total = $fan_total = 0;
                     foreach ($arr_gpu_info as $k_gpu => $gpu) {
+
                         $temp_total += $gpu['temp'];
                         $fan_total  += $gpu['fan'];
+
                         if ($arr_totals_info['eth_total_shares'] > 0) {
                             $arr_gpu_info[$k_gpu]['eth_shares_pct'] = round(100 * ($gpu['eth_shares'] / $arr_totals_info['eth_total_shares']), 2);
+                            if (count($arr_gpu_info) === 1) {
+                                // Fix: If there is only one card in rig
+                                $arr_gpu_info[$k_gpu]['eth_shares_pct'] = 100;
+                            }
                         } else {
                             $arr_gpu_info[$k_gpu]['eth_shares_pct'] = 0;
                         }
+
                     }
 
                     $arr_totals_info['avg_temp'] = round($temp_total / $total_cards, 2);
@@ -295,6 +308,51 @@ while(true) {
 
         file_put_contents(FILE_LOG_GPUS, $log_entry_gpu, FILE_APPEND);
 
+        if (INFLUXDB_ENABLED === true) {
+
+            /**
+             * Influx line format looks something like this:
+             * curl -i -XPOST 'http://localhost:8086/write?db=mydb' --data-binary 'cpu_load_short,host=server01,region=us-west value=0.64 1434055562000000000'
+             * See: https://docs.influxdata.com/influxdb/v1.3/guides/writing_data/
+             */
+
+            $influxdb_url = INFLUXDB_SERVICE_URL.INFLUXDB_SERVICE_PORT.'/write?db='.INFLUXDB_DB;
+
+            // Totals for influxdb
+            $binary_data_totals = 'eth_totals,host='.MACHINE_NAME.' ';
+            foreach ($arr_totals_info as $label => $v) {
+                $binary_data_totals.= $label.'='.$v.',';
+            }
+            $binary_data_totals = substr($binary_data_totals, 0, -1);
+            $binary_data_totals.= ' '.nano_sec_since_unix_epoc(); // Add time in nano seconds
+
+            // GPU's for influxdb
+            $binary_data_gpu = '';
+            foreach ($arr_gpu_info as $gpu_k => $gpu) {
+
+                $binary_data_gpu = 'eth_gpu,host='.MACHINE_NAME.',gpu='.$gpu['id'].' ';
+                foreach ($gpu as $label => $v) {
+                    $binary_data_gpu.= $label.'='.$v.',';
+                }
+                $binary_data_gpu = substr($binary_data_gpu, 0, -1);
+                $binary_data_gpu.= "\n";
+
+            }
+            $binary_data_gpu = substr($binary_data_gpu, 0, -1);
+            $binary_data_gpu.= ' '.nano_sec_since_unix_epoc(); // Add time in nano seconds
+
+            $influx_binary_data = $binary_data_totals."\n".$binary_data_gpu;
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $influxdb_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $influx_binary_data);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/plain'));
+            $result = curl_exec($ch);
+
+        }
+
 
         # ------------------------------------------------------------------ #
         # Output debug-info. if enabled
@@ -327,6 +385,10 @@ while(true) {
 
 }
 
+
+function nano_sec_since_unix_epoc() {
+    return intval(array_sum(explode(' ', microtime()))).'000000000';
+}
 
 
 /**
