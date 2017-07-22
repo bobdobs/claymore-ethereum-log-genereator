@@ -12,7 +12,6 @@ define('FILE_LOG_TOTALS', '/home/scripts/claymore-ethereum-log-genereator/totals
 define('DUAL_CURRENCY', 'DCR'); // Just leave as-is if not dual mining
 define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); // Leave as-is
 
-
 while(true) {
 
     $dual_mining_detected = false;
@@ -168,6 +167,8 @@ while(true) {
                 }
 
             }
+
+            // TODO "Incorrect ETH shares: GPU0 6, GPU1 6, GPU2 3, GPU3 23" + "Incorrect ETH shares: none"
 
             # ------------------------------------------------------------------ #
             # ETH: Get totals and also calculate avg. temperature and avg. fan

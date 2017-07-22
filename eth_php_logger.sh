@@ -6,11 +6,17 @@
 #
 # - Move this file to /etc/init.d/eth_php_logger.sh
 # - $ sudo chmod +x /etc/init.d/eth_php_logger.sh
+# - $ sudo update-rc.d eth_php_logger.sh defaults
 # - $ sudo systemctl daemon-reload
 #
 # Starting and stopping
 # - Start: `$ sudo service eth_php_logger.sh start` or `$ sudo /etc/init.d/eth_php_logger.sh start`
 # - Stop: `$ sudo service eth_php_logger.sh stop` or `$ sudo /etc/init.d/eth_php_logger.sh stop`
+#
+#
+# Need to do this: http://forum.directadmin.com/showthread.php?t=42174
+#
+
 
 NAME=eth_php_logger
 DESC="Eth PHP log generator via PHP CLI script"
