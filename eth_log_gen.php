@@ -349,6 +349,7 @@ while(true) {
 
             $influx_binary_data = $binary_data_totals."\n".$binary_data_gpu;
 
+            $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $influxdb_url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $influx_binary_data);
