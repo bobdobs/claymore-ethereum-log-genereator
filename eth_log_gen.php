@@ -331,7 +331,7 @@ while(true) {
             $binary_data_gpu = '';
             foreach ($arr_gpu_info as $gpu_k => $gpu) {
 
-                $binary_data_gpu = 'eth_gpu,host='.MACHINE_NAME.',gpu='.$gpu['id'].' ';
+                $binary_data_gpu.= 'eth_gpu,host='.MACHINE_NAME.',gpu='.$gpu['id'].' ';
                 foreach ($gpu as $label => $v) {
                     if (in_array($label, $arr_string_fields)) {
                         // String-fields needs to be in qoutes
@@ -344,7 +344,7 @@ while(true) {
                 $binary_data_gpu.= "\n";
 
             }
-            $binary_data_gpu = substr($binary_data_gpu, 0, -1);
+            $binary_data_gpu = substr($binary_data_gpu, 0, -1); // Remove last line break
             $binary_data_gpu.= ' '.nano_sec_since_unix_epoc(); // Add time in nano seconds
 
             $influx_binary_data = $binary_data_totals."\n".$binary_data_gpu;
