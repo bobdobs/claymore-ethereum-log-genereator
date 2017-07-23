@@ -2,7 +2,7 @@
 <?php
 
 define('DEBUG_MODE', false);
-define('SERVICE_URL', 'http://192.168.1.127');
+define('SERVICE_URL', 'http://localhost');
 define('SERVICE_PORT', 3333);
 define('RUN_INDEFINITELY', false); // If set to true script will loop indefinitely and continuously append to logs
 define('UPDATE_FREQ', 10); // Scan and generate log every 10s if RUN_INDEFINITELY=true
@@ -327,12 +327,18 @@ while(true) {
             $binary_data_totals.= ' '.nano_sec_since_unix_epoc(); // Add time in nano seconds
 
             // GPU's for influxdb
+            $arr_string_fields = array('id');
             $binary_data_gpu = '';
             foreach ($arr_gpu_info as $gpu_k => $gpu) {
 
                 $binary_data_gpu = 'eth_gpu,host='.MACHINE_NAME.',gpu='.$gpu['id'].' ';
                 foreach ($gpu as $label => $v) {
-                    $binary_data_gpu.= $label.'='.$v.',';
+                    if (in_array($label, $arr_string_fields)) {
+                        // String-fields needs to be in qoutes
+                        $binary_data_gpu.= $label.'="'.$v.'",';
+                    } else {
+                        $binary_data_gpu.= $label.'='.$v.',';
+                    }
                 }
                 $binary_data_gpu = substr($binary_data_gpu, 0, -1);
                 $binary_data_gpu.= "\n";
@@ -343,13 +349,20 @@ while(true) {
 
             $influx_binary_data = $binary_data_totals."\n".$binary_data_gpu;
 
-            $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $influxdb_url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $influx_binary_data);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/plain'));
+            curl_setopt($ch, CURLOPT_POST, 1);
+
+            $headers = array();
+            $headers[] = "Content-Type: application/x-www-form-urlencoded";
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
             $result = curl_exec($ch);
+            if (curl_errno($ch)) {
+                echo 'Error:' . curl_error($ch);
+            }
+            curl_close ($ch);
 
         }
 
