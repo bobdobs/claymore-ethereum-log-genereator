@@ -2,13 +2,13 @@
 <?php
 
 define('DEBUG_MODE', false);
-define('SERVICE_URL', 'http://localhost');
-define('SERVICE_PORT', 3333);
+define('SERVICE_URL', 'http://localhost'); // Claymore API
+define('SERVICE_PORT', 3333); // Claymore API port
 define('RUN_INDEFINITELY', false); // If set to true script will loop indefinitely and continuously append to logs
 define('UPDATE_FREQ', 10); // Scan and generate log every 10s if RUN_INDEFINITELY=true
 define('MACHINE_NAME', 'minr');
-define('FILE_LOG_GPUS', '/home/scripts/claymore-ethereum-log-genereator/gpu.log');
-define('FILE_LOG_TOTALS', '/home/scripts/claymore-ethereum-log-genereator/totals.log');
+define('FILE_LOG_GPUS', './gpu.log');
+define('FILE_LOG_TOTALS', './totals.log');
 define('DUAL_CURRENCY', 'DCR'); // Just leave as-is if not dual mining
 define('DUAL_CURRENCY_LOWER', strtolower(DUAL_CURRENCY)); // Leave as-is
 define('INFLUXDB_ENABLED', true);
@@ -316,7 +316,7 @@ while(true) {
              * See: https://docs.influxdata.com/influxdb/v1.3/guides/writing_data/
              */
 
-            $influxdb_url = INFLUXDB_SERVICE_URL.INFLUXDB_SERVICE_PORT.'/write?db='.INFLUXDB_DB;
+            $influxdb_url = INFLUXDB_SERVICE_URL.':'.INFLUXDB_SERVICE_PORT.'/write?db='.INFLUXDB_DB;
 
             // Totals for influxdb
             $binary_data_totals = 'eth_totals,host='.MACHINE_NAME.' ';
