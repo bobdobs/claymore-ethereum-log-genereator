@@ -15,6 +15,9 @@ define('INFLUXDB_ENABLED', true);
 define('INFLUXDB_DB', 'telegraf');
 define('INFLUXDB_SERVICE_URL', 'http://localhost');
 define('INFLUXDB_SERVICE_PORT', 8086);
+define('INFLUXDB_USERNAME', '');
+define('INFLUXDB_PASSWORD', '');
+define('INFLUXDB_USE_CREDENTIALS', false);
 
 date_default_timezone_set('UTC');
 
@@ -354,6 +357,9 @@ while(true) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $influx_binary_data);
             curl_setopt($ch, CURLOPT_POST, 1);
+            if (INFLUXDB_USE_CREDENTIALS === true) {
+                curl_setopt($ch, CURLOPT_USERPWD, INFLUXDB_USERNAME . ":" . INFLUXDB_PASSWORD);
+            }
 
             $headers = array();
             $headers[] = "Content-Type: application/x-www-form-urlencoded";
