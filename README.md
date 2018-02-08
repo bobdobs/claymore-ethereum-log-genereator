@@ -137,5 +137,6 @@ You are free to use the script in any way you desire. If you found it useful con
 a donation: 
 
 ETH: 0xa88F6aE3370205d453dEEfef06AafefEe4942710  
-BTC: 1Dpb53d2xTHr5AC55MUQU6yBWNcRt8k3zG  
+BTC: 3Mg9daDRqMz3fdR1gzwscKf17d2MfmBM9j  
 Zcash: t1PLbzngKSNYZWo47va15tsmygjLfKx8cro  
+
