@@ -118,7 +118,7 @@ while(true) {
                 $arr_shares = explode('+', $shares);
 
                 $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_speed'] = $arr_totals[3];
-                $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares'] = $arr_shares[0];
+                $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares'] = intval(str_replace(",", "", $arr_shares[0]));
                 $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_rejected'] = intval($arr_totals[9]);
 
                 // Shares for individual cards
@@ -357,6 +357,10 @@ while(true) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $influx_binary_data);
             curl_setopt($ch, CURLOPT_POST, 1);
+            if (DEBUG_MODE === true) {
+                curl_setopt($ch, CURLOPT_VERBOSE, true);
+            }
+
             if (INFLUXDB_USE_CREDENTIALS === true) {
                 curl_setopt($ch, CURLOPT_USERPWD, INFLUXDB_USERNAME . ":" . INFLUXDB_PASSWORD);
             }
