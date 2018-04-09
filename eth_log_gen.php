@@ -140,7 +140,7 @@ while(true) {
                     $temp_total = $fan_total = 0;
                     foreach ($arr_gpu_info as $k_gpu => $gpu) {
                         if ($arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares'] > 0) {
-                            $arr_gpu_info[$k_gpu][DUAL_CURRENCY_LOWER.'_shares_pct'] = round(100 * ($gpu[DUAL_CURRENCY_LOWER.'_shares'] / $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares']), 2);
+                            $arr_gpu_info[$k_gpu][DUAL_CURRENCY_LOWER.'_shares_pct'] = round(100 * ($gpu[DUAL_CURRENCY_LOWER.'_shares'] ?? 0 / $arr_totals_info[DUAL_CURRENCY_LOWER.'_total_shares']), 2);
                         } else {
                             $arr_gpu_info[$k_gpu][DUAL_CURRENCY_LOWER.'_shares_pct'] = 0;
                         }
@@ -215,11 +215,11 @@ while(true) {
                     $temp_total = $fan_total = 0;
                     foreach ($arr_gpu_info as $k_gpu => $gpu) {
 
-                        $temp_total += $gpu['temp'];
-                        $fan_total  += $gpu['fan'];
+                        $temp_total += $gpu['temp'] ?? 0;
+                        $fan_total  += $gpu['fan'] ?? 0;
 
                         if ($arr_totals_info['eth_total_shares'] > 0) {
-                            $arr_gpu_info[$k_gpu]['eth_shares_pct'] = round(100 * ($gpu['eth_shares'] / $arr_totals_info['eth_total_shares']), 2);
+                            $arr_gpu_info[$k_gpu]['eth_shares_pct'] = round(100 * ($gpu['eth_shares'] ?? 0 / $arr_totals_info['eth_total_shares']), 2);
                             if (count($arr_gpu_info) === 1) {
                                 // Fix: If there is only one card in rig
                                 $arr_gpu_info[$k_gpu]['eth_shares_pct'] = 100;
